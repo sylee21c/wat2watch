@@ -1,6 +1,1 @@
-# wat2watch
-<<<<<<< HEAD
-다트/플러터 기반 영화,드라마 컨텐츠 추천 앱
-=======
-다트/플러터 기반 영화 정보, 추천 앱
->>>>>>> d43fb0a86ed5eff0b80a6b20ec0f7082e1b66f3e
+A sample command-line application providing basic argument parsing with an entrypoint in `bin/`.
