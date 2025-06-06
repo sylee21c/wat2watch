@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/wat2wawtch.iml" filepath="$PROJECT_DIR$/wat2wawtch.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wat2watch.iml" filepath="$PROJECT_DIR$/wat2watch.iml" />
     </modules>
   </component>
 </project>
