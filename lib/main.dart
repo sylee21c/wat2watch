@@ -6,8 +6,7 @@ import 'package:wat2watch_app/screens/register_screen.dart';
 import 'package:wat2watch_app/screens/home_screen.dart';
 import 'package:wat2watch_app/screens/search_screen.dart';
 import 'package:wat2watch_app/screens/rating_screen.dart';
-import 'package:wat2watch_app/screens/my_rating_screen.dart'; // ⭐️ 추가
-import 'package:wat2watch_app/screens/chatbot_screen.dart';
+import 'package:wat2watch_app/screens/my_rating_screen.dart';
 import 'package:wat2watch_app/screens/detail_screen.dart';
 import 'package:wat2watch_app/screens/recommendation_screen.dart';
 import 'package:wat2watch_app/models/content.dart';
@@ -32,16 +31,14 @@ class Wat2WatchApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
           '/search': (context) => const SearchScreen(),
-          '/chatbot': (context) => const ChatbotScreen(),
           '/recommendation': (context) => const RecommendationScreen(),
-          '/rating': (context) => const MyRatingScreen(),  // ⭐️ 내 별점 목록
+          '/rating': (context) => const MyRatingScreen(),  // 내 별점 목록
         },
         onGenerateRoute: (settings) {
           // Detail 화면 이동
           if (settings.name == '/detail') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            if (args != null && args['content'] != null) {
-              final content = args['content'] as Content;
+            final content = settings.arguments as Content?;
+            if (content != null) {
               return MaterialPageRoute(
                 builder: (_) => DetailScreen(content: content),
               );
@@ -52,7 +49,6 @@ class Wat2WatchApp extends StatelessWidget {
               );
             }
           }
-          // /rating 관련 커스텀 라우트 삭제!
           return null;
         },
       ),

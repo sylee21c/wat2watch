@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; // Add this import for debugPrint
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:wat2watch_app/models/content.dart';
 import 'package:wat2watch_app/models/rating.dart';
@@ -11,7 +11,6 @@ class ApiService {
   static final String _tmdbBaseUrl = 'https://api.themoviedb.org/3';
   static final String _baseUrl = AppConfig.apiBaseUrl;
 
-  // 기존 사용자 관련 메서드들
   static Future<User> fetchUserInfo(String userId) async {
     final response = await http.get(Uri.parse('$_baseUrl/user/$userId'));
 
@@ -46,7 +45,7 @@ class ApiService {
     required List<String> favoriteGenres,
   }) async {
     if (_baseUrl.isEmpty) {
-      throw Exception('❌ API_BASE_URL is not defined');
+      throw Exception('API_BASE_URL is not defined');
     }
 
     final url = Uri.parse('$_baseUrl/register');
@@ -68,7 +67,7 @@ class ApiService {
     }
   }
 
-  // 개선된 콘텐츠 관련 메서드들
+  // 콘텐츠 관련 메서드들
   static Future<List<Content>> fetchRecommendedMovies(String userId) async {
     try {
       // 먼저 백엔드에서 추천 영화 ID 목록을 가져옴
@@ -245,6 +244,28 @@ class ApiService {
     }
   }
 
+  static Future<List<Content>> fetchMoviesByOtt(List<String> providerIds) async {
+    final apiKey = AppConfig.tmdbApiKey;
+    final ids = providerIds.join(',');
+    final url = Uri.parse(
+        'https://api.themoviedb.org/3/discover/movie'
+            '?api_key=$apiKey'
+            '&with_watch_providers=$ids'
+            '&watch_region=KR'
+            '&sort_by=popularity.desc'
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final results = data['results'] as List;
+      return results.map((json) => Content.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch OTT movies');
+    }
+  }
+
   // 장르별 영화 가져오기
   static Future<List<Content>> fetchMoviesByGenre(int genreId) async {
     final url = Uri.parse('$_tmdbBaseUrl/discover/movie?api_key=$_tmdbApiKey&with_genres=$genreId&language=ko-KR&sort_by=popularity.desc');
@@ -301,12 +322,6 @@ class ApiService {
     }
   }
 
-  // 에러 처리용 헬퍼 메서드
-  static void _handleHttpError(http.Response response, String operation) {
-    if (response.statusCode != 200) {
-      throw Exception('$operation failed: ${response.statusCode} - ${response.body}');
-    }
-  }
 
   // 영화 출연진 정보 가져오기
   static Future<List<Map<String, dynamic>>> fetchMovieCast(String movieId) async {
@@ -369,22 +384,22 @@ class ApiService {
   }
 
   // 외부 ID 가져오기 (IMDb ID 등)
-  static Future<Map<String, dynamic>?> fetchExternalIds(String movieId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_tmdbBaseUrl/movie/$movieId/external_ids?api_key=$_tmdbApiKey'),
-      );
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to load external IDs');
-      }
-    } catch (e) {
-      debugPrint('Error fetching external IDs: $e');
-      return null;
-    }
-  }
+  // static Future<Map<String, dynamic>?> fetchExternalIds(String movieId) async {
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse('$_tmdbBaseUrl/movie/$movieId/external_ids?api_key=$_tmdbApiKey'),
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       return json.decode(response.body);
+  //     } else {
+  //       throw Exception('Failed to load external IDs');
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error fetching external IDs: $e');
+  //     return null;
+  //   }
+  // }
 
   // 영화 리뷰 가져오기
   static Future<List<Map<String, dynamic>>> fetchMovieReviews(String movieId) async {
@@ -407,21 +422,23 @@ class ApiService {
   }
 
   // 사용자 평점 가져오기 (특정 영화에 대한)
-  static Future<double?> getUserRating(String userId, String movieId) async {
+  static Future<Map<String, dynamic>?> getUserRating(String userId, String movieId) async {
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/ratings/$userId/$movieId'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${await _getAuthToken()}', // 인증 토큰 필요
+          'Authorization': 'Bearer ${await _getAuthToken()}',
         },
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['rating']?.toDouble();
+        return {
+          "rating": data['rating']?.toDouble() ?? 0.0,
+          "comment": data['comment'] ?? "",
+        };
       } else if (response.statusCode == 404) {
-        // 평점이 없는 경우
         return null;
       } else {
         throw Exception('Failed to load user rating: ${response.statusCode}');
@@ -432,18 +449,24 @@ class ApiService {
     }
   }
 
+
   // 별점을 서버에 전송하는 메서드
-  static Future<void> submitRating(String userId, String movieId, double rating, String comment) async {
+  static Future<void> submitRating(
+      String userId,
+      String contentId,
+      double rating,
+      String comment,
+      ) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/ratings'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${await _getAuthToken()}', // 인증 토큰 필요
+          'Authorization': 'Bearer ${await _getAuthToken()}',
         },
         body: json.encode({
-          'user_id': userId,
-          'movie_id': movieId,
+          'userId': userId,
+          'contentId': contentId,
           'rating': rating,
           'comment': comment,
           'timestamp': DateTime.now().toIso8601String(),
@@ -459,12 +482,14 @@ class ApiService {
     }
   }
 
+
+
   // 인증 토큰 가져오기
   static Future<String> _getAuthToken() async {
     return '';
   }
   static Future<List<Map<String, dynamic>>> fetchWatchProviders(String movieId, {String countryCode = 'KR'}) async {
-    final apiKey = AppConfig.tmdbApiKey; // 실제 프로젝트에서는 여기에 API 키가 있음
+    final apiKey = AppConfig.tmdbApiKey;
     final url = Uri.parse(
       'https://api.themoviedb.org/3/movie/$movieId/watch/providers?api_key=$apiKey',
     );

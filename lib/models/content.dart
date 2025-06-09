@@ -15,6 +15,7 @@ class Content {
   final List<String>? productionCompanies;
   final List<String>? productionCountries;
   final List<String>? spokenLanguages;
+  List<String>? ottList;
   final int? budget;
   final int? revenue;
   final String? tagline;
@@ -33,6 +34,7 @@ class Content {
     this.backdropUrl,
     this.releaseDate,
     this.voteAverage,
+    this.ottList,
     this.voteCount,
     this.popularity,
     this.isMovie = true,
@@ -54,7 +56,7 @@ class Content {
   factory Content.fromJson(Map<String, dynamic> json) {
     return Content(
       id: json['id']?.toString(),
-      title: json['title'] ?? json['name'], // TV shows use 'name'
+      title: json['title'] ?? json['name'],
       originalTitle: json['original_title'] ?? json['original_name'],
       overview: json['overview'],
       posterUrl: json['poster_path'],
@@ -63,7 +65,7 @@ class Content {
       voteAverage: json['vote_average']?.toDouble(),
       voteCount: json['vote_count'],
       popularity: json['popularity']?.toDouble(),
-      isMovie: json['title'] != null, // movies have 'title', TV shows have 'name'
+      isMovie: json['title'] != null,
       runtime: json['runtime'],
       genres: json['genres'] != null
           ? (json['genres'] as List).map((g) => g['name'].toString()).toList()
@@ -82,6 +84,9 @@ class Content {
           ? (json['spoken_languages'] as List)
           .map((sl) => sl['english_name'].toString())
           .toList()
+          : null,
+      ottList: json['ottList'] != null
+          ? List<String>.from(json['ottList'])
           : null,
       budget: json['budget'],
       revenue: json['revenue'],
@@ -111,6 +116,7 @@ class Content {
       'production_companies': productionCompanies?.map((pc) => {'name': pc}).toList(),
       'production_countries': productionCountries?.map((pc) => {'name': pc}).toList(),
       'spoken_languages': spokenLanguages?.map((sl) => {'english_name': sl}).toList(),
+      'ottList': ottList,
       'budget': budget,
       'revenue': revenue,
       'tagline': tagline,

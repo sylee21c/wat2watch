@@ -133,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text('🔥 인기 영화', style: TextStyle(fontSize: 20)),
+              child: Text('🔥 인기 영화', style: TextStyle(fontSize: 30)),
             ),
             SizedBox(
               height: 250,

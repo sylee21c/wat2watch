@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:wat2watch_app/models/content.dart';
 import 'package:wat2watch_app/services/api_service.dart';
 import 'package:wat2watch_app/widgets/content_card.dart';
+import 'package:provider/provider.dart';
+import 'package:wat2watch_app/providers/user_provider.dart';
 
 class DetailScreen extends StatefulWidget {
   final Content content;
@@ -21,7 +23,7 @@ class _DetailScreenState extends State<DetailScreen> {
   bool isLoadingRecommended = true;
 
   double userRating = 0.0;
-  String? userComment;
+  String? userComment = '';
   bool isSubmittingRating = false;
   bool hasUserRated = false;
 
@@ -92,15 +94,21 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _loadUserRating() async {
     try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final userId = user?.id;
       final contentId = widget.content.id;
+
+      print('[DEBUG] loadUserRating - userId: $userId, contentId: $contentId');
+
+      if (userId == null) throw Exception('로그인 정보가 없습니다.');
       if (contentId != null) {
-        final rating = await ApiService.getUserRating('user_id', contentId.toString());
-        // 코멘트도 조회하려면 getUserRating이 comment까지 반환해야 함!
-        if (mounted && rating != null) {
+        final ratingData = await ApiService.getUserRating(userId, contentId.toString());
+        print('[DEBUG] loadUserRating - API 응답: $ratingData');
+        if (mounted && ratingData != null) {
           setState(() {
-            userRating = rating; // 이 부분은 서버 API 맞게 조정
+            userRating = (ratingData['rating'] ?? 0.0).toDouble();
+            userComment = ratingData['comment'] ?? '';
             hasUserRated = true;
-            // userComment = ... // comment도 서버에서 함께 받아온다면 여기서 세팅
           });
         }
       }
@@ -118,35 +126,41 @@ class _DetailScreenState extends State<DetailScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('별점 및 코멘트 입력'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
+          content: StatefulBuilder(
+            builder: (dialogContext, localSetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('별점: ', style: TextStyle(fontSize: 16)),
-                  Expanded(
-                    child: Slider(
-                      value: tempRating,
-                      min: 0.5,
-                      max: 5.0,
-                      divisions: 9,
-                      onChanged: (v) => setState(() => tempRating = v),
-                      label: tempRating.toStringAsFixed(1),
+                  Row(
+                    children: [
+                      const Text('별점: ', style: TextStyle(fontSize: 16)),
+                      Expanded(
+                        child: Slider(
+                          value: tempRating,
+                          min: 0.5,
+                          max: 5.0,
+                          divisions: 9,
+                          onChanged: (v) {
+                            localSetState(() => tempRating = v);
+                          },
+                          label: tempRating.toStringAsFixed(1),
+                        ),
+                      ),
+                      Text(tempRating.toStringAsFixed(1)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: '코멘트 (선택)',
                     ),
                   ),
-                  Text(tempRating.toStringAsFixed(1)),
                 ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: commentController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: '코멘트 (선택)',
-                ),
-              ),
-            ],
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -172,6 +186,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+
   Future<void> _submitRating(double rating, String? comment) async {
     setState(() {
       isSubmittingRating = true;
@@ -180,7 +195,12 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       final contentId = widget.content.id;
       if (contentId != null) {
-        await ApiService.submitRating('user_id', contentId.toString(), rating, comment ?? '');
+        final user = Provider.of<UserProvider>(context, listen: false).user;
+        final userId = user?.id;
+        if (userId == null) { // 에러 처리
+          throw Exception('로그인 정보가 없습니다.');
+        }
+        await ApiService.submitRating(userId, contentId.toString(), rating, comment ?? '');
         if (mounted) {
           setState(() {
             userRating = rating;
@@ -386,7 +406,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // 👇 OTT 정보 표시
+                  // OTT 정보 표시
                   if (isLoadingProviders)
                     Row(
                       children: const [

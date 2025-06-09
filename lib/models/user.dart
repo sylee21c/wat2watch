@@ -4,7 +4,7 @@ class User {
   final List<String> subscribedOtt;
   final List<String> favorites;
   final List<String> watched;
-  final List<String> favoriteGenres; // 🎯 문제 필드
+  final List<String> favoriteGenres;
 
   User({
     required this.id,
@@ -12,7 +12,7 @@ class User {
     required this.subscribedOtt,
     required this.favorites,
     required this.watched,
-    required this.favoriteGenres, // ✅ 생성자에 추가
+    required this.favoriteGenres,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -22,7 +22,7 @@ class User {
       subscribedOtt: (json['subscribed_ott'] ?? []).cast<String>(),
       favorites: (json['favorites'] ?? []).cast<String>(),
       watched: (json['watched'] ?? []).cast<String>(),
-      favoriteGenres: (json['favorite_genres'] ?? []).cast<String>(), // ✅ 반영
+      favoriteGenres: (json['favorite_genres'] ?? []).cast<String>(),
     );
   }
 

@@ -17,7 +17,7 @@ class _RatingScreenState extends State<RatingScreen> {
   String _statusMessage = '';
 
   void _showRatingDialog(BuildContext context, String contentId, String contentTitle) async {
-    double tempRating = 0.0;
+    double tempRating = 3.0;
     TextEditingController commentController = TextEditingController();
 
     final result = await showDialog<Map<String, dynamic>>(
@@ -28,7 +28,7 @@ class _RatingScreenState extends State<RatingScreen> {
           content: SizedBox(
             width: 300,
             child: StatefulBuilder(
-              builder: (context, setState) {
+              builder: (context, localSetState) {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -38,7 +38,11 @@ class _RatingScreenState extends State<RatingScreen> {
                         Expanded(
                           child: Slider(
                             value: tempRating,
-                            onChanged: (v) => setState(() => tempRating = v),
+                            onChanged: (v) {
+                              localSetState(() {
+                                tempRating = v;
+                              });
+                            },
                             divisions: 10,
                             min: 0.0,
                             max: 5.0,
@@ -90,6 +94,8 @@ class _RatingScreenState extends State<RatingScreen> {
       );
     }
   }
+
+
 
   Future<void> _submitRating({
     required String userId,

@@ -27,7 +27,7 @@ class _MyRatingScreenState extends State<MyRatingScreen> {
   Future<void> _fetchRatingsAndContents() async {
     setState(() => isLoading = true);
     try {
-      // 1. 유저 정보 가져오기
+      // 유저 정보 가져오기
       final user = Provider.of<UserProvider>(context, listen: false).user;
       if (user == null || user.id == null) {
         setState(() {
@@ -38,10 +38,10 @@ class _MyRatingScreenState extends State<MyRatingScreen> {
         return;
       }
 
-      // 2. 평점(별점) 리스트 가져오기
+      // 평점(별점) 리스트 가져오기
       final ratings = await ApiService.fetchUserRatings(user.id!);
 
-      // 3. 평점에 달린 contentId 모아 각 영화 상세정보 가져오기 (TMDB에서)
+      // 평점에 달린 contentId 모아 각 영화 상세정보 가져오기
       Map<String, Content> cMap = {};
       for (final rating in ratings) {
         final contentId = rating.contentId;
@@ -99,7 +99,7 @@ class _MyRatingScreenState extends State<MyRatingScreen> {
               children: [
                 const Text('내 별점: '),
                 Icon(Icons.star, color: Colors.amber, size: 20),
-                Text('${rating.score} / 5'),
+                Text('${rating.rating} / 5'),
                 if (rating.comment != null && rating.comment!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
